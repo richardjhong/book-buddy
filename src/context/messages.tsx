@@ -6,10 +6,10 @@ import { ReactNode, createContext, useState } from "react";
 
 interface MessagesContextType {
   messages: Message[];
+  isMessageUpdating: boolean;
   addMessage: (message: Message) => void;
   removeMessage: (id: string) => void;
   updateMessage: (id: string, updateFn: (prevText: string) => string) => void;
-  isMessageUpdating: boolean;
   setIsMessageUpdating: (isUpdating: boolean) => void;
 };
 
@@ -41,27 +41,26 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateMessage = (
-    id: string, 
+    id: string,
     updateFn: (prevText: string) => string
   ) => {
-    setMessages((prev) => 
+    setMessages((prev) =>
       prev.map((message) => {
-        if (message.id !== id) {
-          return { ...message, id: updateFn(message.text) };
+        if (message.id === id) {
+          return { ...message, text: updateFn(message.text) }
         }
-
-        return message;
+        return message
       })
-    );
-  };
+    )
+  }
 
   return (
     <MessagesContext.Provider value={{
       messages,
+      isMessageUpdating,
       addMessage,
       removeMessage,
       updateMessage,
-      isMessageUpdating,
       setIsMessageUpdating
     }}>
       {children}
