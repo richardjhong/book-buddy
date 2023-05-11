@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from '@/lib/utils';
+import { Message } from '@/lib/validators/message';
 import { useMutation } from '@tanstack/react-query';
 import { nanoid } from 'nanoid';
 import { FC, HTMLAttributes, useState } from 'react';
@@ -11,19 +12,31 @@ interface ChatInputProps extends HTMLAttributes<HTMLDivElement> {}
 const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
   const [input, setInput] = useState<string>('');
   const { mutate: sendMessage, isLoading } = useMutation({
-    mutationFn: async (message) => {
+    mutationFn: async (message: Message) => {
       const response = await fetch('/api/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({messages: 'hello'})
+        body: JSON.stringify({ messages: [message] })
       });
 
       return response.body;
     },
-    onSuccess: () => {
-      console.log('success');
+    onSuccess: async (stream) => {
+      if (!stream) throw new Error('No stream found');
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+
+      let done = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        const chunkValue = decoder.decode(value);
+        console.log('chunkValue: ', chunkValue);
+      }
     }
   });
 
@@ -38,7 +51,7 @@ const ChatInput: FC<ChatInputProps> = ({ className, ...props }) => {
               e.preventDefault();
               const message = {
                 id: nanoid(),
-                isUserInput: true,
+                isUserMessage: true,
                 text: input
               };
 
